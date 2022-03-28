@@ -1,0 +1,352 @@
+library(ggplot2)
+library(flexdashboard)
+library(dplyr)
+library(tidyverse)
+library(ggplotify)
+library(plotly)
+library(readr)
+library(readxl)
+library(skimr)
+library(janitor)
+library(gdata)
+library(descr)
+library(stargazer)
+library(DT)
+options(scipen=999)
+
+# Number 1 and 2
+setwd("~/Desktop/Empirical Research/Midterm Accident Data")
+
+list.files(pattern ="csv")
+
+
+
+Distracted_Driver_Crashes <- read.csv("Distracted_Driver_Crashes.csv")
+
+DUI_Crashes <- read.csv("DUI_Crashes.csv")
+
+Fixed_Object_Crashes <- read.csv("Fixed_Object_Crashes.csv")
+
+Intersection_Crashes <- read.csv("Intersection_Crashes.csv")
+
+Motorcycle_Crashes <- read.csv("Motorcycle_Crashes.csv")
+
+Non_Motorist_Crashes <- read.csv("Non_Motorist_Crashes.csv")
+
+Older_Driver_Crashes <- read.csv("Older_Driver_Crashes.csv")
+
+Pedestrian_Crashes <- read.csv("Pedestrian_Crashes.csv")
+
+Unlicensed_Driver_Crashes <- read.csv("Unlicensed_Driver_Crashes.csv")
+
+Work_Zone_Crashes <- read.csv("Work_Zone_Crashes.csv")
+
+Wrong_Way_Crashes <- read.csv("Wrong_Way_Crashes.csv")
+
+Young_Driver_Crashes <- read.csv("Young_Driver_Crashes.csv")
+
+# We bind them by rows to merge the data frame, but we also add source id, 
+# which shows us the original data frames the variables were from.
+
+data <- bind_rows(Distracted_Driver_Crashes,
+                  DUI_Crashes, 
+                  Fixed_Object_Crashes,
+                  Intersection_Crashes,
+                  Motorcycle_Crashes,
+                  Non_Motorist_Crashes,
+                  Older_Driver_Crashes,
+                  Pedestrian_Crashes, 
+                  Unlicensed_Driver_Crashes,
+                  Work_Zone_Crashes,
+                  Wrong_Way_Crashes, 
+                  Young_Driver_Crashes, .id = "source")
+
+
+unique(data$source)
+
+# We then sum the number of duplicate crashes.
+sum(duplicated(data$CrashID))
+
+# Remove all duplicates.
+data <- data[!duplicated(data$CrashID), ]
+
+# We now see the number of duplicates Crash IDs are 0.
+sum(duplicated(data$CrashID))
+
+
+# Number 3
+# We created the 12 variables, that tells us which dataframe each was 
+# originally from.
+
+data$Distracted_Driver_Crashes <- data$source == "1"
+data$DUI_Crashes <- data$source == "2"
+data$Fixed_Object_Crashes <- data$source == "3"
+data$Intersection_Crashes <- data$source == "4"
+data$Motorcycle_Crashes <- data$source == "5"
+data$Non_Motorist_Crashes <- data$source == "6"
+data$Older_Driver_Crashes <- data$source == "7"
+data$Pedestrian_Crashes <- data$source == "8"
+data$Unlicensed_Driver_Crashes <- data$source == "9"
+data$Work_Zone_Crashes <- data$source == "10"
+data$Wrong_Way_Crashes <- data$source == "11"
+data$Young_Driver_Crashes <- data$source == "12"
+
+
+
+summary(data$Distracted_Driver_Crashes)
+summary(data$DUI_Crashes)
+summary(data$Fixed_Object_Crashes)
+summary(data$Intersection_Crashes)
+summary(data$Motorcycle_Crashes)
+summary(data$Non_Motorist_Crashes)
+summary(data$Older_Driver_Crashes)
+summary(data$Pedestrian_Crashes)
+summary(data$Unlicensed_Driver_Crashes)
+summary(data$Work_Zone_Crashes)
+summary(data$Wrong_Way_Crashes)
+summary(data$Young_Driver_Crashes)
+
+
+data$Distracted_Driver_Crashes <-ifelse(data$Distracted_Driver_Crashes==TRUE,"YES","NO")
+data$DUI_Crashes<- ifelse(data$DUI_Crashes==TRUE,"YES","NO")
+data$Fixed_Object_Crashes <- ifelse(data$Fixed_Object_Crashes==TRUE,"YES","NO")
+data$Intersection_Crashes <- ifelse(data$Intersection_Crashes==TRUE,"YES","NO")
+data$Motorcycle_Crashes <- ifelse(data$Motorcycle_Crashes==TRUE,"YES","NO")
+data$Non_Motorist_Crashes <- ifelse(data$Non_Motorist_Crashes==TRUE,"YES","NO")
+data$Older_Driver_Crashes <- ifelse(data$Older_Driver_Crashes==TRUE,"YES","NO")
+data$Pedestrian_Crashes <- ifelse(data$Pedestrian_Crashes==TRUE,"YES","NO")
+data$Unlicensed_Driver_Crashes <- ifelse(data$Unlicensed_Driver_Crashes==TRUE,"YES","NO")
+data$Work_Zone_Crashes <- ifelse(data$Work_Zone_Crashes==TRUE,"YES","NO")
+data$Wrong_Way_Crashes <- ifelse(data$Wrong_Way_Crashes==TRUE,"YES","NO")
+data$Young_Driver_Crashes <- ifelse(data$Young_Driver_Crashes==TRUE,"YES","NO")
+
+
+rm(Distracted_Driver_Crashes,
+   DUI_Crashes, 
+   Fixed_Object_Crashes,
+   Intersection_Crashes,
+   Motorcycle_Crashes,
+   Non_Motorist_Crashes,
+   Older_Driver_Crashes,
+   Pedestrian_Crashes, 
+   Unlicensed_Driver_Crashes,
+   Work_Zone_Crashes,
+   Wrong_Way_Crashes, 
+   Young_Driver_Crashes)
+
+# Now, we remove the dummy variable source, since it is the extra variable
+# and we want to keep the 47 needed variables, not 48 variables.
+data <- subset(data, select= c(CrashID:Young_Driver_Crashes))
+
+
+
+# Number 4 
+# Last name is Alonso, so we take the letter A.
+
+unique(data$CrashTownName)
+summary(data$CrashTownName == "Avon")
+summary(data$CrashTownName == "Andover")
+summary(data$CrashTownName == "Ashford")
+summary(data$CrashTownName == "Ansonia")
+
+# After checking all the towns, we can deduce that Avon has the highest
+# number of cases, thus we will pick Avon.
+
+# So, we create a subset for the town Avon.
+use_varb <- (data$CrashTownName == "Avon") 
+data1 <- subset(data,use_varb)
+
+rm(use_varb, data)
+# We will now work with data 1, representing the values for the town of Avon.
+
+# Last thing before working with the analysis,
+# we will change the Crashdates from character to dates.
+
+data1$CrashDate <- as.Date(data1$CrashDate)
+
+
+# Number 5 and 6
+
+
+# Now, we will calculate some of the marginal probabilities from accidents at intersections in 
+# Avon based on non-daylight conditions.
+
+# We create a linear regression model to see the relationship between weather causing manner of 
+# collision impact. 
+regression <- lm(MannerOfCrashCollisionImpact ~ WeatherCondition1,  data = data1)
+stargazer(regression, type = "text")
+
+
+# We since the p-value is less than the level of significance(0.01) we reject the null hypothesis that their is
+# no relationship, and deem with a 99 percent confidence that there is a positive relationship between
+# weather condition and manner of collision impact.
+
+  
+
+# Notes Plot 1: The majority of crashes of young people took place NOT at an intersection.
+# Additionally an L intersection seems to be where least crashes take place, for both
+# young and non-young people.
+plot1 <- ggplotly(
+    ggplot(data1, 
+           aes(x = CrashTimeHour, y = TypeOfIntersectionDesc, color= Young_Driver_Crashes)) +
+      geom_point() + 
+      ggtitle("TypeOfIntersection vs CrashTimeHour In Avon") + 
+      xlab("CrashTimeHour") +
+      ylab("TypeOfIntersection") +
+      theme_minimal()) 
+  
+plot1
+
+
+
+# Notes Plot 2: We see that most accidents, regardless of the year, occur in dry, followed by
+# and wet traffic then snow surface conditions.
+plot2 <- ggplotly(ggplot(data1, 
+       aes(x= CrashDate, 
+           fill = TrafficSurfaceConditionDesc))+
+  geom_histogram(position = "dodge")+
+  labs(y = "Count",
+       x="Years of Crashes", 
+       fill = "TrafficSurfaceCondition")+  
+  theme_minimal() + ggtitle("Number of Crashes Per Year Based On Weather Conditions In Avon"))
+
+plot2
+
+data1$CrashDateYear
+
+# Plot 3 Notes: we determine that motorcycle crash are the minority of crashes, whereas
+# non motorist crashes are the majority of crashes.
+
+plot3 <- ggplotly(ggplot(data1, 
+                aes(x= CrashDate, 
+                    fill = Motorcycle_Crashes))+
+  geom_histogram(position = "dodge")+
+  labs(y = "Count",
+       x="Per Year", 
+       fill = "Motorcycle Crashes")+  
+  theme_minimal() + ggtitle("Number of Crashes Per Year Based On Motorcycle Drivers In Avon"))
+
+plot3
+
+
+
+
+# Notes plot 4 : Firstly, We notice that intersections crashes occur less frequently than
+# non- intersection crashes, with the exception of 2019 where non- intersection
+# crashes sharply decline.
+# An interesting point to note is during 2020 to 2021, we notice a huge decline 
+# in car crashes, 
+# most likely due to  the covid-19 pandemic. Since people were inside for more 
+# of the time, the possibility of crashed decreased because there were less
+# vehicles able to get into accidents. However, around mid 2021 crashes return
+# to pre-pandemic levels. 
+
+plot4 <- ggplotly(
+  ggplot(data1,
+         aes(x= CrashDate,
+             color = factor(Intersection_Crashes)))+
+  geom_freqpoly(size = 1, bins= 20)+
+  scale_color_manual(values = c("dodgerblue", "forestgreen"))+
+  theme_minimal() + ggtitle("Intersection Crashes Per Year In Avon") + ylab("Number of Crashes"))
+
+plot4
+
+
+
+
+# Plot 5 and and 6: notes the first shows the young driver status by crash
+# severity, where property damage is the largest category, following any
+# type of injury lastly fatal in the minority. With the same table used to create the plot
+# we then calculte the prooprtions ofdrivers killed, both young and older, which are in the minority.
+#As for the proportion of young people that were involved in a serious accident
+# or property damage, we know they are around 0.1279826 and 0.1576119 respectively.
+# Lastly, we create a plot a graph demonstrating the proportion of 
+# young people involved in car accidents based on the severity of their 
+# injury. We note similarly, that propoerty damage is the largest group,
+# followed by injury of any type and fatalities.The majority of crashes that occur
+# in Avon by young people result in either property damage or
+# a type of injury. Very few people end up killed compared to the quantity of other 
+# car accidents. 
+
+table1 <- table(data1$CrashSeverityDesc, data1$Young_Driver_Crashes)
+table1
+
+# plot 5 (non-interactive plot)
+plot(table1, main="Young Driver Status By Crash Severity",
+     xlab="Crash Severity",
+     ylab="Young Driver", 
+     col = c("grey", "blue"))
+
+# Proportions of non-young people(FALSE) and young people(TRUE) that were in accident.
+x=c(table1[1,2]/(table1[1,1]+table1[1,2]),
+    table1[2,2]/(table1[2,1]+table1[2,2]),
+    table1[3,2]/(table1[3,1]+table1[3,2]))
+x
+
+
+Young_prop_table<-data.frame(row.names= c("Fatal", "Injury of any type", "Property Damage Only"), Young_people=x)
+Young_prop_table
+plot6 <- ggplotly(ggplot(data=Young_prop_table, aes(y=row.names(Young_prop_table), x=Young_people, fill=row.names(Young_prop_table))) + 
+  geom_bar(stat="identity") + scale_fill_brewer(palette = "Dark2") +ggtitle("Severity Of Injury By Proportion Of Young People") + theme(legend.position = "none") + labs( x="Proportion Of Young People", y="Severity Of Injury")) 
+
+plot6
+
+
+
+# notes plot 7: This plot demonstrates the proportion of crashes by Trafficway class type.
+# The majority of accidents take in trafficway, on the road, whereas
+# the minority of accident s are from non-trafficway, parking lot, trafficway not on the 
+# road and unknown places.
+
+plot7 <- ggplotly( ggplot(aes(x = TrafficwayClassTypeDesc, y = "Proportion"), 
+       data = data1) +
+  geom_col(aes(),size = 2, alpha = .5, color="lightblue") +
+  xlab("Trafficway Class Type") +
+  ylab("Proportion Of Crashes") +
+  ggtitle("Proportion of Crashes By Trafficway Class Type In Avon") +
+  theme_linedraw())
+
+plot7
+
+
+
+# Plot 8: We Note that the majority of crash incidents do not involve school
+# bus related incidents, however handful that do involve school buses tend to involve them
+# directly, not indirectly.
+plot8 <- ggplotly( ggplot(aes(x = CrashDate,
+           y= SchoolBusRelatedDesc),
+       data = data1) +
+  geom_bin2d() + ggtitle("School Bus Related By Crash Date In Avon"))
+
+plot8
+
+
+
+# Plot 9 Notes: firstly, the majoriy of crashes tend to take place around noon
+# until 3pm, while the least crashes take placefrom 12am to 5am.
+# Secondly, the graphs shows a facte grid of non-wrong way accidents
+# and wring way accidents. We note that wrong way accidents are in the minority 
+# accidents.
+plot9 <- ggplotly( ggplot(data = data1) + ylab("Number Of Crashes") + facet_grid(~Wrong_Way_Crashes) +
+  geom_bar(mapping = aes(x = CrashTimeHour), fill="lightblue")+ theme_minimal()+ ggtitle("Number of Crashes Hourly Based on Non-Wrong/Wrong Way In Avon") + xlab("Time Per Hour"))
+
+plot9
+
+
+
+
+# Notes Plot 9: The majority of crashes take place during the day time, again
+# we observe the amount of crashes declining around the year 2020-2021.
+plot10 <- ggplotly( ggplot(data1, 
+                aes(x= CrashDate, 
+                    fill = LightConditionDesc))+
+  geom_histogram(position = "dodge")+
+  labs(y = "Number Of Incidents",
+       x="Years of Crashes", 
+       fill = "Light Condition") +  
+  theme_minimal() + ggtitle("Number of Crashes Per Year Based On Light Conditions In Avon"))
+
+
+plot10
+
+
